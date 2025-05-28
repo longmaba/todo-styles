@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Themed Todo App (LocalStorage)</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=VT323&family=Montserrat:wght@400;700&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600&family=Tomorrow:wght@400;700&display=swap"
+        rel="stylesheet">
+    <script type="module">
+        // DOM Elements
+        let appContainer, todoInput, addTodoButton, todoList, loadingIndicator, errorMessage, themeSwitcherContainer, userIdDisplayElement;
+        const DEFAULT_THEME = 'neobrutalist';
+        const LOCAL_STORAGE_TODOS_KEY = 'themedTodos';
+        const LOCAL_STORAGE_THEME_KEY = 'themedTodoAppTheme';
+
+        // --- Theme Management ---
+        function applyTheme(themeName) {
+            if (!appContainer) appContainer = document.getElementById('app-container');
+            const bodyEl = document.body;
+
+            if (!appContainer || !bodyEl) return;
+
+            appContainer.dataset.theme = themeName;
+            bodyEl.dataset.theme = themeName;
+            console.log(`Theme applied: ${themeName}`);
+
+            const themeButtons = document.querySelectorAll('.theme-btn');
+            themeButtons.forEach(button => {
+                if (button.dataset.theme === themeName) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        }
+
+        function saveThemePreference(themeName) {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_THEME_KEY, themeName);
+                console.log(`Theme preference '${themeName}' saved to localStorage.`);
+            } catch (error) {
+                console.error("Error saving theme preference to localStorage: ", error);
+            }
+        }
+
+        function loadThemePreference() {
+            try {
+                const savedTheme = localStorage.getItem(LOCAL_STORAGE_THEME_KEY);
+                if (savedTheme) {
+                    applyTheme(savedTheme);
+                } else {
+                    applyTheme(DEFAULT_THEME);
+                }
+            } catch (error) {
+                console.error("Error loading theme preference from localStorage: ", error);
+                applyTheme(DEFAULT_THEME);
+            }
+        }
+
+        // --- LocalStorage Todo Functions ---
+        function getTodosFromLocalStorage() {
+            try {
+                const todosJSON = localStorage.getItem(LOCAL_STORAGE_TODOS_KEY);
+                return todosJSON ? JSON.parse(todosJSON) : [];
+            } catch (error) {
+                console.error("Error parsing todos from localStorage: ", error);
+                showError("Could not load your saved tasks. Data might be corrupted.");
+                return []; // Return empty array on error to prevent app crash
+            }
+        }
+
+        function saveTodosToLocalStorage(todos) {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_TODOS_KEY, JSON.stringify(todos));
+            } catch (error) {
+                console.error("Error saving todos to localStorage: ", error);
+                showError("Could not save your tasks. Changes might be lost.");
+            }
+        }
+
+        async function addTodo() {
+            const todoText = todoInput.value.trim();
+            if (todoText === '') {
+                showError("Todo text cannot be empty.");
+                return;
+            }
+
+            const newTodo = {
+                id: crypto.randomUUID(), // Generate a unique ID
+                text: todoText,
+                completed: false,
+                createdAt: new Date().toISOString() // ISO string for consistent sorting
+            };
+
+            const todos = getTodosFromLocalStorage();
+            todos.push(newTodo);
+            saveTodosToLocalStorage(todos);
+
+            todoInput.value = '';
+            hideError();
+            loadTodos(); // Reload and re-render todos
+        }
+
+        async function toggleTodoCompleted(todoId) {
+            let todos = getTodosFromLocalStorage();
+            const todoIndex = todos.findIndex(todo => todo.id === todoId);
+
+            if (todoIndex > -1) {
+                todos[todoIndex].completed = !todos[todoIndex].completed;
+                saveTodosToLocalStorage(todos);
+                loadTodos(); // Reload and re-render todos
+            } else {
+                console.error(`Todo with id ${todoId} not found for toggle.`);
+                showError("Could not update task. Task not found.");
+            }
+        }
+
+        async function deleteTodo(todoId) {
+            let todos = getTodosFromLocalStorage();
+            todos = todos.filter(todo => todo.id !== todoId);
+            saveTodosToLocalStorage(todos);
+            loadTodos(); // Reload and re-render todos
+        }
+
+        function loadTodos() {
+            showLoading();
+            const todos = getTodosFromLocalStorage();
+            // Sort todos by createdAt timestamp (ISO string comparison works for this format)
+            todos.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+            renderTodos(todos);
+            hideLoading();
+            hideError();
+        }
+
+        function renderTodos(todos) {
+            if (!todoList) return;
+            todoList.innerHTML = '';
+            if (todos.length === 0) {
+                const emptyStateLi = document.createElement('li');
+                emptyStateLi.className = 'todo-item-placeholder';
+                emptyStateLi.textContent = 'No todos yet. Add one!';
+                todoList.appendChild(emptyStateLi);
+                return;
+            }
+            todos.forEach(todo => {
+                const li = document.createElement('li');
+                li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+                li.dataset.id = todo.id;
+
+                const todoTextSpan = document.createElement('span');
+                todoTextSpan.className = 'todo-text';
+                todoTextSpan.textContent = todo.text;
+                // Pass only todo.id for toggle, status will be fetched fresh
+                todoTextSpan.addEventListener('click', () => toggleTodoCompleted(todo.id));
+
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'delete-btn';
+                deleteButton.innerHTML = '&#x2715;';
+                deleteButton.setAttribute('aria-label', 'Delete todo');
+                deleteButton.addEventListener('click', (e) => { e.stopPropagation(); deleteTodo(todo.id); });
+
+                li.appendChild(todoTextSpan);
+                li.appendChild(deleteButton);
+                todoList.appendChild(li);
+            });
+        }
+
+        // --- UI Helper Functions ---
+        function showLoading() { if (loadingIndicator) loadingIndicator.style.display = 'block'; }
+        function hideLoading() { if (loadingIndicator) loadingIndicator.style.display = 'none'; }
+        function showError(message) {
+            if (errorMessage) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+            }
+            console.error("Error Displayed: ", message); // Also log to console
+        }
+        function hideError() { if (errorMessage) { errorMessage.style.display = 'none'; } }
+
+        // --- DOMContentLoaded ---
+        document.addEventListener('DOMContentLoaded', () => {
+            appContainer = document.getElementById('app-container');
+            todoInput = document.getElementById('todo-input');
+            addTodoButton = document.getElementById('add-todo-btn');
+            todoList = document.getElementById('todo-list');
+            userIdDisplayElement = document.getElementById('user-id-display'); // Get the element
+            loadingIndicator = document.getElementById('loading-indicator');
+            errorMessage = document.getElementById('error-message');
+            themeSwitcherContainer = document.querySelector('.theme-switcher');
+
+            // Remove or repurpose the User ID display as it's not needed for localStorage
+            if (userIdDisplayElement) {
+                userIdDisplayElement.style.display = 'none'; // Hide it
+                // Or change its text: userIdDisplayElement.textContent = "Tasks stored locally";
+            }
+
+            if (addTodoButton && todoInput) {
+                addTodoButton.addEventListener('click', addTodo);
+                todoInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addTodo(); });
+            } else {
+                console.error("Core input elements not found on DOMContentLoaded!");
+            }
+
+            if (themeSwitcherContainer) {
+                themeSwitcherContainer.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('theme-btn')) {
+                        const themeName = e.target.dataset.theme;
+                        if (themeName) {
+                            applyTheme(themeName);
+                            saveThemePreference(themeName);
+                        }
+                    }
+                });
+            }
+
+            loadThemePreference();
+            loadTodos();
+        });
+
+    </script>
+    <style>
+        /* Basic Reset & Body Styling */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            transition: background-color 0.4s ease, color 0.4s ease, background-image 0.4s ease;
+            font-family: var(--font-primary, 'Inter', sans-serif);
+            background-color: var(--bg-body, #F0F0F0);
+            background-image: var(--bg-body-image, none);
+            background-size: cover;
+            background-position: center;
+            color: var(--text-body, #111827);
+        }
+
+        /* --- THEME DEFINITIONS --- */
+
+        /* Neobrutalist Theme */
+        body[data-theme="neobrutalist"],
+        #app-container[data-theme="neobrutalist"] {
+            --font-primary: 'Inter', sans-serif;
+            --font-display: 'VT323', monospace;
+
+            --bg-body: #F0F0F0;
+            --bg-body-image: none;
+            --text-body: #111827;
+            --bg-container: #FFFFFF;
+            --border-container: 3px solid #111827;
+            --shadow-container: 8px 8px 0px #111827;
+            --radius-container: 0px;
+            --backdrop-blur: none;
+
+            --text-header: #111827;
+            --text-userid: #4B5563;
+            /* Kept for placeholder color consistency */
+
+            --bg-input: #F0F0F0;
+            --border-input: 3px solid #111827;
+            --shadow-input: 3px 3px 0px #6B7280;
+            --radius-input: 4px;
+            --border-input-focus: #3B82F6;
+            --shadow-input-focus: 0 0 0 3px rgba(59, 130, 246, 0.4), 3px 3px 0px #111827;
+
+            --bg-button-primary: #FDE047;
+            --text-button-primary: #111827;
+            --border-button: 3px solid #111827;
+            --shadow-button: 3px 3px 0px #111827;
+            --radius-button: 4px;
+            --bg-button-primary-hover: #FACC15;
+            --transform-button-hover: translate(1px, 1px);
+            --shadow-button-hover: 2px 2px 0px #111827;
+            --transform-button-active: translate(2px, 2px);
+            --shadow-button-active: 1px 1px 0px #111827;
+
+            --bg-button-danger: #F87171;
+            --text-button-danger: #FFFFFF;
+            --border-button-danger: 2px solid #111827;
+            --shadow-button-danger: 2px 2px 0px #111827;
+            --bg-button-danger-hover: #EF4444;
+
+            --bg-item: #FFFFFF;
+            --border-item: 3px solid #111827;
+            --shadow-item: 3px 3px 0px #9CA3AF;
+            --radius-item: 4px;
+            --bg-item-hover: #FFFFFF;
+            --shadow-item-hover: 4px 4px 0px #6B7280;
+            --text-item: #111827;
+            --text-item-completed: #6B7280;
+            --bg-item-completed: #E5E7EB;
+            --border-item-completed: 2px solid #9CA3AF;
+
+            --bg-message-loading: #A5F3FC;
+            --text-message-loading: #0E7490;
+            --bg-message-error: #FECACA;
+            --text-message-error: #991B1B;
+            --border-message: 2px solid #111827;
+            --radius-message: 4px;
+            --shadow-message: none;
+
+            --bg-placeholder: #E5E7EB;
+            --border-placeholder: 3px dashed #9CA3AF;
+            --text-placeholder: #6B7280;
+            --radius-placeholder: 4px;
+            --shadow-placeholder: none;
+
+            --bg-theme-btn: #E5E7EB;
+            --text-theme-btn: #374151;
+            --border-theme-btn: 2px solid #6B7280;
+            --shadow-theme-btn: 2px 2px 0px #6B7280;
+            --radius-theme-btn: 4px;
+            --bg-theme-btn-active: #3B82F6;
+            --text-theme-btn-active: #FFFFFF;
+            --border-theme-btn-active: 2px solid #1D4ED8;
+            --shadow-theme-btn-active: 1px 1px 0px #1D4ED8;
+        }
+
+        /* Bauhaus Theme */
+        body[data-theme="bauhaus"],
+        #app-container[data-theme="bauhaus"] {
+            --font-primary: 'Montserrat', sans-serif;
+            --font-display: 'Montserrat', sans-serif;
+
+            --bg-body: #F0F0F0;
+            --bg-body-image: none;
+            --text-body: #000000;
+            --bg-container: #FFFFFF;
+            --border-container: 3px solid #000000;
+            --shadow-container: none;
+            --radius-container: 0px;
+            --backdrop-blur: none;
+
+            --text-header: #000000;
+            --text-userid: #444444;
+
+            --bg-input: #FFFFFF;
+            --border-input: 2px solid #000000;
+            --shadow-input: none;
+            --radius-input: 0px;
+            --border-input-focus: #FF0000;
+            --shadow-input-focus: 0 0 0 2px rgba(255, 0, 0, 0.5);
+
+            --bg-button-primary: #FFFF00;
+            --text-button-primary: #000000;
+            --border-button: 2px solid #000000;
+            --shadow-button: none;
+            --radius-button: 0px;
+            --bg-button-primary-hover: #E6E600;
+            --transform-button-hover: none;
+            --shadow-button-hover: none;
+            --transform-button-active: translate(1px, 1px);
+            --shadow-button-active: none;
+
+            --bg-button-danger: #FF0000;
+            --text-button-danger: #FFFFFF;
+            --border-button-danger: 2px solid #000000;
+            --shadow-button-danger: none;
+            --bg-button-danger-hover: #CC0000;
+
+            --bg-item: #FFFFFF;
+            --border-item: 2px solid #000000;
+            --shadow-item: none;
+            --radius-item: 0px;
+            --bg-item-hover: #EAEAEA;
+            --shadow-item-hover: none;
+            --text-item: #000000;
+            --text-item-completed: #777777;
+            --bg-item-completed: #D0D0D0;
+            --border-item-completed: 2px solid #555555;
+
+            --bg-message-loading: #0000FF;
+            --text-message-loading: #FFFFFF;
+            --bg-message-error: #FF0000;
+            --text-message-error: #FFFFFF;
+            --border-message: 2px solid #000000;
+            --radius-message: 0px;
+            --shadow-message: none;
+
+            --bg-placeholder: #E0E0E0;
+            --border-placeholder: 2px dashed #000000;
+            --text-placeholder: #333333;
+            --radius-placeholder: 0px;
+            --shadow-placeholder: none;
+
+            --bg-theme-btn: #DDDDDD;
+            --text-theme-btn: #000000;
+            --border-theme-btn: 1px solid #000000;
+            --shadow-theme-btn: none;
+            --radius-theme-btn: 0px;
+            --bg-theme-btn-active: #0000FF;
+            --text-theme-btn-active: #FFFFFF;
+            --border-theme-btn-active: 1px solid #000000;
+            --shadow-theme-btn-active: none;
+        }
+
+        /* Neumorphism Theme */
+        body[data-theme="neumorphism"],
+        #app-container[data-theme="neumorphism"] {
+            --font-primary: 'Inter', sans-serif;
+            --font-display: 'Inter', sans-serif;
+
+            --bg-body: #E0E5EC;
+            --bg-body-image: none;
+            --text-body: #5A6779;
+            --bg-container: var(--bg-body);
+            --border-container: none;
+            --radius-container: 25px;
+            --backdrop-blur: none;
+
+            --nm-offset: 7px;
+            --nm-blur: 15px;
+            --nm-color-light: #FFFFFF;
+            --nm-color-dark: #A3B1C6;
+
+            --shadow-extruded: var(--nm-offset) var(--nm-offset) var(--nm-blur) var(--nm-color-dark),
+                calc(-1 * var(--nm-offset)) calc(-1 * var(--nm-offset)) var(--nm-blur) var(--nm-color-light);
+            --shadow-pressed: inset var(--nm-offset) var(--nm-offset) var(--nm-blur) var(--nm-color-dark),
+                inset calc(-1 * var(--nm-offset)) calc(-1 * var(--nm-offset)) var(--nm-blur) var(--nm-color-light);
+
+            --shadow-container: var(--shadow-extruded);
+            --text-header: var(--text-body);
+            --text-userid: #7A8A9E;
+
+            --bg-input: var(--bg-body);
+            --border-input: none;
+            --shadow-input: var(--shadow-pressed);
+            --radius-input: 15px;
+            --border-input-focus: none;
+            --shadow-input-focus: var(--shadow-pressed), 0 0 0 3px rgba(163, 177, 198, 0.3);
+
+            --bg-button-primary: var(--bg-body);
+            --text-button-primary: #3B82F6;
+            --border-button: none;
+            --shadow-button: var(--shadow-extruded);
+            --radius-button: 12px;
+            --bg-button-primary-hover: var(--bg-body);
+            --transform-button-hover: translateY(-2px);
+            --shadow-button-hover: calc(var(--nm-offset) + 2px) calc(var(--nm-offset) + 2px) calc(var(--nm-blur) + 2px) var(--nm-color-dark),
+                calc(-1 * (var(--nm-offset) + 2px)) calc(-1 * (var(--nm-offset) + 2px)) calc(var(--nm-blur) + 2px) var(--nm-color-light);
+            --transform-button-active: translateY(0px);
+            --shadow-button-active: var(--shadow-pressed);
+
+            --bg-button-danger: var(--bg-body);
+            --text-button-danger: #D32F2F;
+            --border-button-danger: none;
+            --shadow-button-danger: var(--shadow-extruded);
+            --bg-button-danger-hover: var(--bg-body);
+
+            --bg-item: var(--bg-body);
+            --border-item: none;
+            --shadow-item: var(--shadow-extruded);
+            --radius-item: 15px;
+            --bg-item-hover: var(--bg-body);
+            --shadow-item-hover: calc(var(--nm-offset) + 1px) calc(var(--nm-offset) + 1px) calc(var(--nm-blur) + 1px) var(--nm-color-dark),
+                calc(-1 * (var(--nm-offset) + 1px)) calc(-1 * (var(--nm-offset) + 1px)) calc(var(--nm-blur) + 1px) var(--nm-color-light);
+            --text-item: var(--text-body);
+            --text-item-completed: #8A9AAF;
+            --bg-item-completed: var(--bg-body);
+            --border-item-completed: none;
+            --shadow-item-completed: var(--shadow-pressed);
+
+            --bg-message-loading: var(--bg-body);
+            --text-message-loading: #3B82F6;
+            --bg-message-error: var(--bg-body);
+            --text-message-error: #D32F2F;
+            --border-message: none;
+            --radius-message: 15px;
+            --shadow-message: var(--shadow-extruded);
+
+            --bg-placeholder: var(--bg-body);
+            --border-placeholder: none;
+            --text-placeholder: var(--text-userid);
+            --radius-placeholder: 15px;
+            --shadow-placeholder: var(--shadow-pressed);
+
+            --bg-theme-btn: var(--bg-body);
+            --text-theme-btn: var(--text-body);
+            --border-theme-btn: none;
+            --shadow-theme-btn: calc(var(--nm-offset) - 3px) calc(var(--nm-offset) - 3px) calc(var(--nm-blur) - 5px) var(--nm-color-dark),
+                calc(-1 * (var(--nm-offset) - 3px)) calc(-1 * (var(--nm-offset) - 3px)) calc(var(--nm-blur) - 5px) var(--nm-color-light);
+            --radius-theme-btn: 10px;
+            --bg-theme-btn-active: var(--bg-body);
+            --text-theme-btn-active: #3B82F6;
+            --border-theme-btn-active: none;
+            --shadow-theme-btn-active: var(--shadow-pressed);
+        }
+
+        /* Retro Futurism Theme */
+        body[data-theme="retro-futurism"],
+        #app-container[data-theme="retro-futurism"] {
+            --font-primary: 'Rajdhani', sans-serif;
+            --font-display: 'Orbitron', sans-serif;
+
+            --bg-body: #2C3E50;
+            --bg-body-image: none;
+            --text-body: #EAEAEA;
+            --bg-container: #34495E;
+            --border-container: 2px solid #F39C12;
+            --shadow-container: 0 0 15px rgba(243, 156, 18, 0.3), 4px 4px 0px #1C2833;
+            --radius-container: 8px;
+            --backdrop-blur: none;
+
+            --text-header: #F39C12;
+            --text-userid: #BDC3C7;
+
+            --bg-input: #2C3E50;
+            --border-input: 2px solid #8E44AD;
+            --shadow-input: inset 2px 2px 5px #1C2833, 0 0 5px rgba(142, 68, 173, 0.2);
+            --radius-input: 6px;
+            --border-input-focus: #F39C12;
+            --shadow-input-focus: inset 2px 2px 5px #1C2833, 0 0 10px rgba(243, 156, 18, 0.5);
+
+            --bg-button-primary: #F39C12;
+            --text-button-primary: #2C3E50;
+            --border-button: 2px solid #2C3E50;
+            --shadow-button: 3px 3px 0px #1C2833;
+            --radius-button: 6px;
+            --bg-button-primary-hover: #E67E22;
+            --transform-button-hover: translateY(-1px);
+            --shadow-button-hover: 4px 4px 0px #1C2833;
+            --transform-button-active: translateY(1px);
+            --shadow-button-active: 2px 2px 0px #1C2833;
+
+            --bg-button-danger: #C0392B;
+            --text-button-danger: #ECF0F1;
+            --border-button-danger: 2px solid #2C3E50;
+            --shadow-button-danger: 2px 2px 0px #1C2833;
+            --bg-button-danger-hover: #A93226;
+
+            --bg-item: #34495E;
+            --border-item: 1px solid #7F8C8D;
+            --shadow-item: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            --radius-item: 6px;
+            --bg-item-hover: #4A6177;
+            --shadow-item-hover: 3px 3px 7px rgba(0, 0, 0, 0.3);
+            --text-item: #ECF0F1;
+            --text-item-completed: #95A5A6;
+            --bg-item-completed: #2C3E50;
+            --border-item-completed: 1px solid #F39C12;
+
+            --bg-message-loading: #1ABC9C;
+            --text-message-loading: #2C3E50;
+            --bg-message-error: #E74C3C;
+            --text-message-error: #FFFFFF;
+            --border-message: 1px solid #2C3E50;
+            --radius-message: 6px;
+            --shadow-message: 0 0 8px rgba(0, 0, 0, 0.3);
+
+            --bg-placeholder: #2C3E50;
+            --border-placeholder: 2px dashed #7F8C8D;
+            --text-placeholder: #7F8C8D;
+            --radius-placeholder: 6px;
+            --shadow-placeholder: inset 1px 1px 3px #1C2833;
+
+            --bg-theme-btn: #4A6177;
+            --text-theme-btn: #ECF0F1;
+            --border-theme-btn: 1px solid #F39C12;
+            --shadow-theme-btn: 2px 2px 0px #1C2833;
+            --radius-theme-btn: 5px;
+            --bg-theme-btn-active: #F39C12;
+            --text-theme-btn-active: #2C3E50;
+            --border-theme-btn-active: 1px solid #2C3E50;
+            --shadow-theme-btn-active: inset 1px 1px 2px #A3660A;
+        }
+
+        /* Glassmorphism Theme */
+        body[data-theme="glassmorphism"],
+        #app-container[data-theme="glassmorphism"] {
+            --font-primary: 'Inter', sans-serif;
+            --font-display: 'Inter', sans-serif;
+
+            --bg-body: transparent;
+            --bg-body-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --text-body: #FFFFFF;
+
+            --bg-glass-rgb: 255, 255, 255;
+            --bg-container-opacity: 0.15;
+            --bg-element-opacity: 0.1;
+            --bg-button-opacity: 0.2;
+            --backdrop-blur: 10px;
+
+            --bg-container: rgba(var(--bg-glass-rgb), var(--bg-container-opacity));
+            --border-container: 1px solid rgba(255, 255, 255, 0.25);
+            --shadow-container: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            --radius-container: 20px;
+
+            --text-header: #FFFFFF;
+            --text-userid: rgba(255, 255, 255, 0.7);
+
+            --bg-input: rgba(var(--bg-glass-rgb), var(--bg-element-opacity));
+            --border-input: 1px solid rgba(255, 255, 255, 0.2);
+            --shadow-input: none;
+            --radius-input: 12px;
+            --border-input-focus: 1px solid rgba(255, 255, 255, 0.5);
+            --shadow-input-focus: 0 0 0 2px rgba(255, 255, 255, 0.1);
+
+            --bg-button-primary: rgba(var(--bg-glass-rgb), var(--bg-button-opacity));
+            --text-button-primary: #FFFFFF;
+            --border-button: 1px solid rgba(255, 255, 255, 0.3);
+            --shadow-button: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --radius-button: 10px;
+            --bg-button-primary-hover: rgba(var(--bg-glass-rgb), calc(var(--bg-button-opacity) + 0.1));
+            --transform-button-hover: translateY(-2px);
+            --shadow-button-hover: 0 6px 20px rgba(0, 0, 0, 0.15);
+            --transform-button-active: translateY(0px);
+            --shadow-button-active: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+            --bg-button-danger: rgba(255, 82, 82, var(--bg-button-opacity));
+            --text-button-danger: #FFFFFF;
+            --border-button-danger: 1px solid rgba(255, 82, 82, 0.4);
+            --shadow-button-danger: 0 4px 15px rgba(200, 0, 0, 0.1);
+            --bg-button-danger-hover: rgba(255, 82, 82, calc(var(--bg-button-opacity) + 0.1));
+
+            --bg-item: rgba(var(--bg-glass-rgb), var(--bg-element-opacity));
+            --border-item: 1px solid rgba(255, 255, 255, 0.18);
+            --shadow-item: 0 2px 10px rgba(0, 0, 0, 0.05);
+            --radius-item: 12px;
+            --bg-item-hover: rgba(var(--bg-glass-rgb), calc(var(--bg-element-opacity) + 0.05));
+            --shadow-item-hover: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --text-item: rgba(255, 255, 255, 0.9);
+            --text-item-completed: rgba(255, 255, 255, 0.5);
+            --bg-item-completed: rgba(var(--bg-glass-rgb), calc(var(--bg-element-opacity) - 0.02));
+            --border-item-completed: 1px solid rgba(255, 255, 255, 0.1);
+
+            --bg-message-loading: rgba(100, 181, 246, var(--bg-element-opacity));
+            --text-message-loading: #FFFFFF;
+            --bg-message-error: rgba(239, 83, 80, var(--bg-element-opacity));
+            --text-message-error: #FFFFFF;
+            --border-message: 1px solid rgba(255, 255, 255, 0.2);
+            --radius-message: 12px;
+            --shadow-message: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+            --bg-placeholder: rgba(var(--bg-glass-rgb), calc(var(--bg-element-opacity) * 0.7));
+            --border-placeholder: 1px dashed rgba(255, 255, 255, 0.2);
+            --text-placeholder: rgba(255, 255, 255, 0.6);
+            --radius-placeholder: 12px;
+            --shadow-placeholder: none;
+
+            --bg-theme-btn: rgba(var(--bg-glass-rgb), var(--bg-button-opacity));
+            --text-theme-btn: rgba(255, 255, 255, 0.85);
+            --border-theme-btn: 1px solid rgba(255, 255, 255, 0.25);
+            --shadow-theme-btn: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --radius-theme-btn: 8px;
+            --bg-theme-btn-active: rgba(var(--bg-glass-rgb), calc(var(--bg-button-opacity) + 0.15));
+            --text-theme-btn-active: #FFFFFF;
+            --border-theme-btn-active: 1px solid rgba(255, 255, 255, 0.4);
+            --shadow-theme-btn-active: 0 0 5px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Cyberpunk Theme */
+        body[data-theme="cyberpunk"],
+        #app-container[data-theme="cyberpunk"] {
+            --font-primary: 'Tomorrow', sans-serif;
+            --font-display: 'Orbitron', sans-serif;
+
+            --bg-body: #0d0221;
+            --bg-body-image: none;
+            --text-body: #00f0ff;
+
+            --bg-container: rgba(10, 2, 30, 0.85);
+            --border-container: 2px solid #ff00ff;
+            --shadow-container: 0 0 15px #ff00ff, 0 0 25px #ff00ff, inset 0 0 5px rgba(0, 0, 0, 0.5);
+            --radius-container: 4px;
+            --backdrop-blur: none;
+
+            --text-header: #f0f0f0;
+            --text-header-shadow: 0 0 5px #00f0ff, 0 0 10px #00f0ff;
+            --text-userid: #00f0ff;
+
+            --bg-input: rgba(0, 0, 0, 0.5);
+            --border-input: 1px solid #00f0ff;
+            --shadow-input: inset 0 0 8px rgba(0, 240, 255, 0.3);
+            --radius-input: 2px;
+            --border-input-focus: 1px solid #f0f0f0;
+            --shadow-input-focus: inset 0 0 8px rgba(0, 240, 255, 0.5), 0 0 10px #00f0ff;
+
+            --bg-button-primary: #ff00ff;
+            --text-button-primary: #0d0221;
+            --border-button: 1px solid #0d0221;
+            --shadow-button: 0 0 8px #ff00ff, 0 0 12px #ff00ff;
+            --radius-button: 2px;
+            --bg-button-primary-hover: #f0f0f0;
+            --text-button-primary-hover: #ff00ff;
+            --transform-button-hover: scale(1.05);
+            --shadow-button-hover: 0 0 15px #ff00ff, 0 0 25px #ff00ff;
+            --transform-button-active: scale(0.98);
+            --shadow-button-active: 0 0 5px #ff00ff;
+
+            --bg-button-danger: #39ff14;
+            --text-button-danger: #0d0221;
+            --border-button-danger: 1px solid #0d0221;
+            --shadow-button-danger: 0 0 8px #39ff14;
+            --bg-button-danger-hover: #f0f0f0;
+            --text-button-danger-hover: #39ff14;
+
+            --bg-item: rgba(10, 2, 30, 0.7);
+            --border-item: 1px solid #00f0ff;
+            --shadow-item: 0 0 5px rgba(0, 240, 255, 0.5);
+            --radius-item: 2px;
+            --bg-item-hover: rgba(20, 5, 50, 0.8);
+            --shadow-item-hover: 0 0 10px rgba(0, 240, 255, 0.8);
+            --text-item: #f0f0f0;
+            --text-item-completed: #888;
+            --bg-item-completed: rgba(0, 0, 0, 0.6);
+            --border-item-completed: 1px dashed #888;
+
+            --bg-message-loading: rgba(0, 240, 255, 0.15);
+            --text-message-loading: #00f0ff;
+            --bg-message-error: rgba(255, 0, 255, 0.15);
+            --text-message-error: #ff00ff;
+            --border-message: 1px solid;
+            --radius-message: 2px;
+            --shadow-message: 0 0 8px;
+
+            --bg-placeholder: rgba(0, 0, 0, 0.3);
+            --border-placeholder: 1px dashed #00f0ff;
+            --text-placeholder: #00f0ff;
+            --radius-placeholder: 2px;
+            --shadow-placeholder: none;
+
+            --bg-theme-btn: rgba(0, 0, 0, 0.4);
+            --text-theme-btn: #00f0ff;
+            --border-theme-btn: 1px solid #00f0ff;
+            --shadow-theme-btn: 0 0 5px #00f0ff;
+            --radius-theme-btn: 2px;
+            --bg-theme-btn-active: #00f0ff;
+            --text-theme-btn-active: #0d0221;
+            --border-theme-btn-active: 1px solid #0d0221;
+            --shadow-theme-btn-active: 0 0 10px #00f0ff, 0 0 15px #00f0ff;
+        }
+
+        /* Apply variables to general elements */
+        #app-container {
+            font-family: var(--font-primary);
+            background-color: var(--bg-container);
+            color: var(--text-body);
+            width: 100%;
+            max-width: 500px;
+            padding: 24px;
+            border: var(--border-container);
+            box-shadow: var(--shadow-container);
+            border-radius: var(--radius-container);
+            margin-bottom: 20px;
+            backdrop-filter: var(--backdrop-blur, none);
+            -webkit-backdrop-filter: var(--backdrop-blur, none);
+            transition: background-color 0.4s ease, border 0.4s ease, box-shadow 0.4s ease, backdrop-filter 0.4s ease;
+        }
+
+        .theme-switcher {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .theme-btn {
+            padding: 10px 15px;
+            font-family: var(--font-primary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: var(--radius-theme-btn, 8px);
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, backdrop-filter 0.2s ease;
+            background-color: var(--bg-theme-btn);
+            color: var(--text-theme-btn);
+            border: var(--border-theme-btn);
+            box-shadow: var(--shadow-theme-btn);
+            backdrop-filter: var(--backdrop-blur, none);
+            -webkit-backdrop-filter: var(--backdrop-blur, none);
+        }
+
+        .theme-btn:hover {
+            transform: var(--transform-button-hover, translateY(-1px));
+            background-color: var(--bg-theme-btn-hover, var(--bg-theme-btn-active));
+            color: var(--text-theme-btn-hover, var(--text-theme-btn-active));
+        }
+
+        .theme-btn.active {
+            background-color: var(--bg-theme-btn-active);
+            color: var(--text-theme-btn-active);
+            border: var(--border-theme-btn-active);
+            box-shadow: var(--shadow-theme-btn-active);
+            transform: translateY(0px);
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: 2.8rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 24px;
+            color: var(--text-header);
+            text-shadow: var(--text-header-shadow, none);
+            text-transform: uppercase;
+            transition: color 0.4s ease, text-shadow 0.4s ease;
+        }
+
+        #user-id-display {
+            /* This element is hidden in the JS for localStorage version */
+            font-family: var(--font-primary);
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 16px;
+            color: var(--text-userid);
+            word-break: break-all;
+            transition: color 0.4s ease;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #todo-input {
+            flex-grow: 1;
+            padding: 14px 18px;
+            font-family: var(--font-primary);
+            font-size: 1rem;
+            border: var(--border-input);
+            border-radius: var(--radius-input);
+            background-color: var(--bg-input);
+            color: var(--text-body);
+            box-shadow: var(--shadow-input);
+            backdrop-filter: var(--backdrop-blur, none);
+            -webkit-backdrop-filter: var(--backdrop-blur, none);
+            transition: box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.4s ease, color 0.4s ease;
+        }
+
+        #todo-input::placeholder {
+            color: var(--text-userid);
+        }
+
+        #todo-input:focus {
+            outline: none;
+            border-color: var(--border-input-focus);
+            box-shadow: var(--shadow-input-focus);
+        }
+
+        #add-todo-btn {
+            padding: 14px 22px;
+            font-family: var(--font-primary);
+            font-weight: 700;
+            font-size: 1rem;
+            background-color: var(--bg-button-primary);
+            color: var(--text-button-primary);
+            border: var(--border-button);
+            border-radius: var(--radius-button);
+            cursor: pointer;
+            box-shadow: var(--shadow-button);
+            backdrop-filter: var(--backdrop-blur, none);
+            -webkit-backdrop-filter: var(--backdrop-blur, none);
+            transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease, color 0.2s ease;
+        }
+
+        #add-todo-btn:hover {
+            background-color: var(--bg-button-primary-hover);
+            color: var(--text-button-primary-hover, var(--text-button-primary));
+            transform: var(--transform-button-hover);
+            box-shadow: var(--shadow-button-hover);
+        }
+
+        #add-todo-btn:active {
+            transform: var(--transform-button-active);
+            box-shadow: var(--shadow-button-active);
+        }
+
+        #loading-indicator,
+        #error-message {
+            text-align: center;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: var(--border-message);
+            border-radius: var(--radius-message);
+            font-family: var(--font-primary);
+            font-size: 1rem;
+            box-shadow: var(--shadow-message);
+            backdrop-filter: var(--backdrop-blur, none);
+            -webkit-backdrop-filter: var(--backdrop-blur, none);
+            transition: background-color 0.4s ease, color 0.4s ease, border 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        #loading-indicator {
+            background-color: var(--bg-message-loading);
+            color: var(--text-message-loading);
+            border-color: var(--text-message-loading);
+            box-shadow: 0 0 8px var(--text-message-loading);
+        }
+
+        #error-message {
+            background-color: var(--bg-message-error);
+            color: var(--text-message-error);
+            border-color: var(--text-message-error);
+            box-shadow: 0 0 8px var(--text-message-error);
+            display: none;
+        }
+
+        #todo-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .todo-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            background-color: var(--bg-item);
+            border: var(--border-item);
+            border-radius: var(--radius-item);
+            margin-bottom: 14px;
+            box-shadow: var(--shadow-item);
+            backdrop-filter: var(--backdrop-blur, none);
+            -webkit-backdrop-filter: var(--backdrop-blur, none);
+            transition: box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+            cursor: pointer;
+        }
+
+        .todo-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .todo-item:hover {
+            background-color: var(--bg-item-hover);
+            box-shadow: var(--shadow-item-hover);
+            transform: var(--transform-button-hover, translateY(-2px));
+        }
+
+        .todo-text {
+            flex-grow: 1;
+            margin-right: 10px;
+            font-size: 1rem;
+            color: var(--text-item);
+            transition: color 0.2s ease;
+        }
+
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+            color: var(--text-item-completed);
+            text-decoration-color: var(--text-button-danger, #ff00ff);
+        }
+
+        .todo-item.completed {
+            background-color: var(--bg-item-completed);
+            border-color: var(--border-item-completed);
+            box-shadow: var(--shadow-item-completed);
+        }
+
+        .delete-btn {
+            background-color: var(--bg-button-danger);
+            color: var(--text-button-danger);
+            border: var(--border-button-danger);
+            border-radius: var(--radius-button);
+            padding: 8px 12px;
+            font-family: var(--font-primary);
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-button-danger);
+            backdrop-filter: var(--backdrop-blur, none);
+            -webkit-backdrop-filter: var(--backdrop-blur, none);
+            transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease, color 0.2s ease;
+        }
+
+        .delete-btn:hover {
+            background-color: var(--bg-button-danger-hover);
+            color: var(--text-button-danger-hover, var(--text-button-danger));
+            transform: var(--transform-button-hover);
+            box-shadow: var(--shadow-button-hover);
+        }
+
+        .delete-btn:active {
+            transform: var(--transform-button-active);
+            box-shadow: var(--shadow-button-active);
+        }
+
+        .todo-item-placeholder {
+            padding: 14px 18px;
+            background-color: var(--bg-placeholder);
+            border: var(--border-placeholder);
+            border-radius: var(--radius-placeholder);
+            color: var(--text-placeholder);
+            text-align: center;
+            font-style: italic;
+            box-shadow: var(--shadow-placeholder);
+            backdrop-filter: var(--backdrop-blur, none);
+            -webkit-backdrop-filter: var(--backdrop-blur, none);
+            transition: background-color 0.4s ease, color 0.4s ease, border 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            #app-container {
+                padding: 16px;
+                margin-top: 10px;
+            }
+
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            .input-area {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            #add-todo-btn {
+                width: 100%;
+                padding: 14px;
+            }
+
+            #todo-input {
+                padding: 14px;
+            }
+
+            .todo-item {
+                padding: 12px 14px;
+            }
+
+            .todo-text {
+                font-size: 0.95rem;
+            }
+
+            .delete-btn {
+                padding: 8px 10px;
+                font-size: 0.85rem;
+            }
+
+            .theme-switcher {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .theme-btn {
+                padding: 8px 10px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="theme-switcher">
+        <button class="theme-btn" data-theme="neobrutalist">Neo</button>
+        <button class="theme-btn" data-theme="bauhaus">Bauhaus</button>
+        <button class="theme-btn" data-theme="neumorphism">Neumorph</button>
+        <button class="theme-btn" data-theme="retro-futurism">Retro</button>
+        <button class="theme-btn" data-theme="glassmorphism">Glass</button>
+        <button class="theme-btn" data-theme="cyberpunk">Cyber</button>
+    </div>
+
+    <div id="app-container" data-theme="neobrutalist">
+        <h1>Todo List</h1>
+        <div id="user-id-display" style="display: none;"></div>
+        <div id="error-message" style="display: none;"></div>
+        <div class="input-area">
+            <input type="text" id="todo-input" placeholder="Enter a new todo...">
+            <button id="add-todo-btn">Add Task</button>
+        </div>
+        <div id="loading-indicator" style="display: none;">Loading todos...</div>
+        <ul id="todo-list"></ul>
+    </div>
+</body>
+
+</html>
