@@ -741,6 +741,135 @@
             --shadow-theme-btn-active: 0 0 10px #00f0ff, 0 0 15px #00f0ff;
         }
 
+        /* Card Theme */
+        body[data-theme="card"],
+        #app-container[data-theme="card"] {
+            --font-primary: ui-sans-serif, system-ui, sans-serif;
+            --font-display: ui-sans-serif, system-ui, sans-serif;
+
+            --card-primary: #ff3e00;
+            --card-primary-hover: #ff6d43;
+            --card-secondary: #4d61ff;
+            --card-secondary-hover: #5e70ff;
+            --card-accent: #00e0b0;
+            --card-text: #050505;
+            --card-bg: #ffffff;
+            --card-shadow-color: #000000;
+            --card-pattern-color: #cfcfcf;
+
+            --bg-body: #f5f5f5;
+            --bg-body-image: none;
+            --text-body: var(--card-text);
+            --bg-container: var(--card-bg);
+            --border-container: 0.35em solid var(--card-text);
+            --shadow-container: 0.7em 0.7em 0 var(--card-shadow-color), inset 0 0 0 0.15em rgba(0, 0, 0, 0.05);
+            --radius-container: 0.6em;
+            --backdrop-blur: none;
+
+            --text-header: var(--card-text);
+            --text-userid: #666666;
+
+            --bg-input: var(--card-bg);
+            --border-input: 0.2em solid var(--card-text);
+            --shadow-input: 0.3em 0.3em 0 rgba(0, 0, 0, 0.2);
+            --radius-input: 0.4em;
+            --border-input-focus: 0.2em solid var(--card-primary);
+            --shadow-input-focus: 0.4em 0.4em 0 var(--card-shadow-color), 0 0 0 0.15em rgba(255, 62, 0, 0.3);
+
+            --bg-button-primary: var(--card-secondary);
+            --text-button-primary: var(--card-bg);
+            --border-button: 0.2em solid var(--card-text);
+            --shadow-button: 0.3em 0.3em 0 var(--card-shadow-color);
+            --radius-button: 0.4em;
+            --bg-button-primary-hover: var(--card-secondary-hover);
+            --transform-button-hover: translate(-0.1em, -0.1em);
+            --shadow-button-hover: 0.4em 0.4em 0 var(--card-shadow-color);
+            --transform-button-active: translate(0.1em, 0.1em);
+            --shadow-button-active: 0.15em 0.15em 0 var(--card-shadow-color);
+
+            --bg-button-danger: var(--card-primary);
+            --text-button-danger: var(--card-bg);
+            --border-button-danger: 0.2em solid var(--card-text);
+            --shadow-button-danger: 0.2em 0.2em 0 var(--card-shadow-color);
+            --bg-button-danger-hover: var(--card-primary-hover);
+
+            --bg-item: var(--card-bg);
+            --border-item: 0.2em solid var(--card-text);
+            --shadow-item: 0.3em 0.3em 0 rgba(0, 0, 0, 0.2);
+            --radius-item: 0.4em;
+            --bg-item-hover: var(--card-bg);
+            --shadow-item-hover: 0.4em 0.4em 0 rgba(0, 0, 0, 0.3);
+            --text-item: var(--card-text);
+            --text-item-completed: #777777;
+            --bg-item-completed: #f0f0f0;
+            --border-item-completed: 0.2em solid #999999;
+            --transform-item-hover: translate(-0.1em, -0.1em);
+
+            --bg-message-loading: var(--card-accent);
+            --text-message-loading: var(--card-text);
+            --bg-message-error: var(--card-primary);
+            --text-message-error: var(--card-bg);
+            --border-message: 0.2em solid var(--card-text);
+            --radius-message: 0.4em;
+            --shadow-message: 0.3em 0.3em 0 var(--card-shadow-color);
+
+            --bg-placeholder: #f8f8f8;
+            --border-placeholder: 0.2em dashed var(--card-pattern-color);
+            --text-placeholder: #888888;
+            --radius-placeholder: 0.4em;
+            --shadow-placeholder: inset 0.1em 0.1em 0.2em rgba(0, 0, 0, 0.1);
+
+            --bg-theme-btn: #f0f0f0;
+            --text-theme-btn: var(--card-text);
+            --border-theme-btn: 0.15em solid var(--card-text);
+            --shadow-theme-btn: 0.2em 0.2em 0 var(--card-shadow-color);
+            --radius-theme-btn: 0.3em;
+            --bg-theme-btn-active: var(--card-secondary);
+            --text-theme-btn-active: var(--card-bg);
+            --border-theme-btn-active: 0.15em solid var(--card-text);
+            --shadow-theme-btn-active: 0.1em 0.1em 0 var(--card-shadow-color);
+        }
+
+        /* Card theme special hover effects for todo items */
+        body[data-theme="card"] .todo-item:hover {
+            transform: var(--transform-item-hover, translate(-0.1em, -0.1em));
+        }
+
+        body[data-theme="card"] #app-container {
+            position: relative;
+            overflow: hidden;
+            transform-origin: center;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        body[data-theme="card"] #app-container:hover {
+            transform: translate(-0.2em, -0.2em) scale(1.01);
+            box-shadow: 1em 1em 0 var(--card-shadow-color), inset 0 0 0 0.15em rgba(0, 0, 0, 0.05);
+        }
+
+        body[data-theme="card"] #app-container::before {
+            content: "";
+            position: absolute;
+            top: -1em;
+            right: -1em;
+            width: 4em;
+            height: 4em;
+            background: var(--card-accent);
+            transform: rotate(45deg);
+            z-index: 1;
+        }
+
+        body[data-theme="card"] #app-container::after {
+            content: "★";
+            position: absolute;
+            top: 0.4em;
+            right: 0.4em;
+            color: var(--card-text);
+            font-size: 1.2em;
+            font-weight: bold;
+            z-index: 2;
+        }
+
         /* Apply variables to general elements */
         #app-container {
             font-family: var(--font-primary);
@@ -1063,6 +1192,7 @@
         <button class="theme-btn" data-theme="retro-futurism">Retro</button>
         <button class="theme-btn" data-theme="glassmorphism">Glass</button>
         <button class="theme-btn" data-theme="cyberpunk">Cyber</button>
+        <button class="theme-btn" data-theme="card">Card</button>
     </div>
 
     <div id="app-container" data-theme="neobrutalist">
