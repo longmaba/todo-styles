@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntelliBank Voice Assistant - Presentation (New Card Style)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            font-family: ui-sans-serif, system-ui, sans-serif;
+        }
+
+        :root {
+            --primary: #ff3e00;
+            --primary-hover: #ff6d43;
+            --secondary: #4d61ff;
+            --secondary-hover: #5e70ff;
+            --accent: #00e0b0;
+            --text: #050505;
+            --bg: #ffffff;
+            --shadow-color: #000000;
+            --pattern-color: #cfcfcf;
+            /* For subtle patterns if used */
+            --slide-page-bg: #f7f7f7;
+            /* Light gray for the overall page */
+        }
+
+        @keyframes fadeInSlide {
+            from {
+                opacity: 0;
+                transform: translateY(15px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .slide-container {
+            scroll-snap-type: y mandatory;
+            overflow-y: scroll;
+            height: 100vh;
+            width: 100vw;
+            background-color: var(--slide-page-bg);
+        }
+
+        .slide {
+            scroll-snap-align: start;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 25px;
+            /* Adjusted padding */
+            box-sizing: border-box;
+            overflow-y: auto;
+            color: var(--text);
+        }
+
+        .slide-content {
+            position: relative;
+            max-width: 1000px;
+            /* Increased from 800px to 1000px */
+            width: 100%;
+            background: var(--bg);
+            border: 0.35em solid var(--text);
+            border-radius: 0.6em;
+            box-shadow: 0.7em 0.7em 0 var(--shadow-color), inset 0 0 0 0.15em rgba(0, 0, 0, 0.05);
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            overflow: visible;
+            /* Allow pseudo-elements to show outside */
+            transform-origin: center;
+            animation: fadeInSlide 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+            padding-top: 0;
+            /* Title area will handle top padding */
+        }
+
+        .slide-content:hover {
+            transform: translate(-0.4em, -0.4em) scale(1.02);
+            box-shadow: 1em 1em 0 var(--shadow-color);
+        }
+
+        .slide-content:active {
+            transform: translate(0.1em, 0.1em) scale(0.98);
+            box-shadow: 0.5em 0.5em 0 var(--shadow-color);
+        }
+
+        .slide-content::before {
+            /* Corner Accent */
+            content: "";
+            position: absolute;
+            top: -1em;
+            right: -1em;
+            width: 4em;
+            height: 4em;
+            background: var(--accent);
+            transform: rotate(45deg);
+            z-index: 3;
+            /* Above content, below star */
+            border: 0.2em solid var(--text);
+            box-shadow: 0.2em 0.2em 0 var(--shadow-color);
+        }
+
+        .slide-content::after {
+            /* Star Icon */
+            content: "★";
+            position: absolute;
+            top: 0.3em;
+            /* Adjusted for new border */
+            right: 0.3em;
+            /* Adjusted for new border */
+            color: var(--text);
+            font-size: 1.2em;
+            font-weight: bold;
+            z-index: 4;
+            /* Highest */
+        }
+
+        /* Title Area Styling for H1 */
+        .slide-title-area {
+            position: relative;
+            padding: 1em 1.4em;
+            /* Adjusted padding */
+            background: var(--primary);
+            color: var(--bg);
+            font-weight: 800;
+            font-size: 1.1em;
+            /* Relative to slide-content font-size */
+            display: flex;
+            justify-content: center;
+            /* Center title text */
+            align-items: center;
+            border-bottom: 0.35em solid var(--text);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            z-index: 2;
+            overflow: hidden;
+            border-top-left-radius: calc(0.6em - 0.35em);
+            /* Match card's inner radius */
+            border-top-right-radius: calc(0.6em - 0.35em);
+            margin-bottom: 1em;
+            /* Space below title area */
+        }
+
+        .slide-title-area::before {
+            /* Diagonal stripes for title */
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1) 0.5em, transparent 0.5em, transparent 1em);
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .slide-content h1 {
+            /* Resetting h1 default margins */
+            margin: 0;
+            font-size: inherit;
+            /* Inherit from .slide-title-area */
+            color: inherit;
+        }
+
+        .card-body-content {
+            /* Wrapper for content below title */
+            padding: 0 1.5em 1.5em 1.5em;
+            /* Padding for actual content */
+            position: relative;
+            z-index: 2;
+        }
+
+        .slide h2 {
+            font-size: 1.1em;
+            /* Relative to card-body-content */
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 0.6em;
+            color: var(--secondary);
+            border-bottom: 0.15em dashed rgba(0, 0, 0, 0.15);
+            padding-bottom: 0.3em;
+        }
+
+        .slide p,
+        .slide li {
+            font-size: 0.9em;
+            line-height: 1.5;
+            margin-bottom: 0.5em;
+            text-align: left;
+            color: var(--text);
+        }
+
+        .slide ul {
+            list-style-type: '➤';
+            list-style-position: inside;
+            padding-left: 0.3em;
+        }
+
+        .slide ul li {
+            padding-left: 0.3em;
+        }
+
+        .slide .highlight {
+            background-color: var(--accent);
+            color: var(--text);
+            padding: 0.15em 0.4em;
+            border-radius: 0.25em;
+            font-weight: 700;
+            border: 0.15em solid var(--text);
+            box-shadow: 0.15em 0.15em 0 var(--shadow-color);
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 360px;
+            margin: 1.5em auto;
+            padding: 1em;
+            border-radius: 0.4em;
+            /* Slightly smaller radius */
+            background-color: var(--bg);
+            border: 0.25em solid var(--text);
+            /* Thinner border for charts */
+            box-shadow: 0.4em 0.4em 0 var(--shadow-color);
+            transition: all 0.3s ease;
+        }
+
+        .chart-container:hover {
+            transform: translate(-0.2em, -0.2em);
+            box-shadow: 0.6em 0.6em 0 var(--shadow-color);
+        }
+
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: 800;
+            color: var(--primary);
+            padding-bottom: 0.1em;
+            margin-bottom: 0.2em;
+            display: inline-block;
+        }
+
+        .star-rating span {
+            font-size: 1.3em;
+            color: var(--secondary);
+            transition: transform 0.2s ease;
+        }
+
+        .star-rating span:hover {
+            transform: scale(1.15) rotate(5deg);
+        }
+
+        .star-rating span.empty {
+            color: var(--pattern-color);
+        }
+
+        .feature-card {
+            position: relative;
+            padding: 0.8em 1em;
+            text-align: center;
+            border-radius: 0.5em;
+            background-color: var(--bg);
+            border: 0.25em solid var(--text);
+            box-shadow: 0.4em 0.4em 0 var(--shadow-color);
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .feature-card:hover {
+            transform: translate(-0.2em, -0.2em) scale(1.03);
+            box-shadow: 0.6em 0.6em 0 var(--shadow-color);
+        }
+
+        .feature-card:active {
+            transform: translate(0.05em, 0.05em) scale(0.99);
+            box-shadow: 0.3em 0.3em 0 var(--shadow-color);
+        }
+
+        .feature-card h2 {
+            font-size: 0.9em;
+            /* Smaller for feature cards */
+            text-transform: uppercase;
+            color: var(--secondary);
+            font-weight: 700;
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0.3em;
+        }
+
+        .feature-card p,
+        .feature-card .stat-number {
+            font-size: 0.8em;
+            text-align: center;
+            color: var(--text);
+        }
+
+        .feature-card .stat-number {
+            font-size: 1.4em;
+            color: var(--primary);
+        }
+
+        /* Optional pattern for background of slide-content body */
+        .card-body-content::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+            background-size: 0.6em 0.6em;
+            pointer-events: none;
+            opacity: 0.5;
+            z-index: -1;
+            /* Behind content but inside card */
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="slide-container">
+
+        <section class="slide">
+            <div class="slide-content">
+                <div class="slide-title-area">
+                    <h1>IntelliBank Voice Assistant</h1>
+                </div>
+                <div class="card-body-content">
+                    <p class="text-xl md:text-2xl mt-4 italic text-center">Transforming Banking Communication:
+                        Intelligent, Instant, 24/7 Support.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <div class="slide-title-area">
+                    <h1>The Bottleneck in Banking Support</h1>
+                </div>
+                <div class="card-body-content">
+                    <div class="grid md:grid-cols-2 gap-x-6 gap-y-4 mt-2">
+                        <div>
+                            <h2>Customer Frustration:</h2>
+                            <ul>
+                                <li>Long wait times, especially during peak hours.</li>
+                                <li>Limited access outside business hours.</li>
+                                <li>Repetitive questions leading to inefficient interactions.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h2>Bank Inefficiencies:</h2>
+                            <ul>
+                                <li>High operational costs for call centers.</li>
+                                <li>Skilled agents bogged down by basic, repetitive inquiries.</li>
+                                <li>Suboptimal customer experience impacting loyalty.</li>
+                                <li>Missed opportunities for high-value interactions.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <div class="slide-title-area">
+                    <h1>Our Vision & Solution: Meet IntelliBank</h1>
+                </div>
+                <div class="card-body-content">
+                    <p class="text-lg mb-4"><strong>Vision:</strong> To revolutionize banking customer support with an
+                        intelligent, stable, and adaptable Voice AI Agent. We provide 24/7 assistance, seamlessly handle
+                        routine inquiries, and empower human agents by reducing their workload, allowing them to focus
+                        on high-value interactions.</p>
+                    <h2>IntelliBank Voice Assistant offers:</h2>
+                    <ul class="mt-2 text-left md:w-3/4 mx-auto">
+                        <li><span class="font-semibold">Immediate, 24/7 Support:</span> No more waiting.</li>
+                        <li><span class="font-semibold">Efficient Handling of Routine Tasks:</span> Frees up human
+                            agents.</li>
+                        <li><span class="font-semibold">Seamless Integration:</span> Works with existing infrastructure.
+                        </li>
+                        <li><span class="font-semibold">Multilingual Capability:</span> English & Vietnamese.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <div class="slide-title-area">
+                    <h1>Vietnam's AI Banking Boom</h1>
+                </div>
+                <div class="card-body-content">
+                    <p class="text-center mb-4">The Vietnamese market is ripe for AI-driven banking solutions.</p>
+                    <div class="grid md:grid-cols-3 gap-3 items-start">
+                        <div class="feature-card">
+                            <h2>Market Projection</h2>
+                            <p class="stat-number">USD 604M</p>
+                            <p class="text-xs">by 2029 (Conversational AI)</p>
+                        </div>
+                        <div class="feature-card">
+                            <h2>Explosive Growth</h2>
+                            <p class="stat-number">21.81%</p>
+                            <p class="text-xs">CAGR (Conversational AI)</p>
+                        </div>
+                        <div class="feature-card">
+                            <h2>Digital Adoption</h2>
+                            <div
+                                class="chart-container mx-auto h-[120px] max-h-[130px] !border-none !shadow-none !bg-transparent p-0 relative z-10">
+                                <canvas id="digitalAdoptionChart"></canvas>
+                            </div>
+                            <p class="mt-1 text-xs"><span class="highlight font-bold">97-98%</span> digital
+                                transactions.</p>
+                        </div>
+                    </div>
+                    <p class="mt-4 text-center italic text-sm">A necessary evolution for staying competitive.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <div class="slide-title-area">
+                    <h1>Target Audience: Your Valued Bank Customers</h1>
+                </div>
+                <div class="card-body-content">
+                    <p class="text-center mb-4">Primary users: <strong>Existing Bank Customers</strong> seeking
+                        assistance.</p>
+                    <div class="grid md:grid-cols-3 gap-3 text-left">
+                        <div class="feature-card">
+                            <h2>Their Needs:</h2>
+                            <ul class="text-xs">
+                                <li>Efficient, accurate, immediate help.</li>
+                                <li>Reduced wait times.</li>
+                            </ul>
+                        </div>
+                        <div class="feature-card">
+                            <h2>Language Focus:</h2>
+                            <ul class="text-xs">
+                                <li>Native English & Vietnamese support.</li>
+                            </ul>
+                        </div>
+                        <div class="feature-card">
+                            <h2>Technical Literacy:</h2>
+                            <ul class="text-xs">
+                                <li>Clear, jargon-free AI communication.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <div class="slide-title-area">
+                    <h1>IntelliBank MVP: Core Impact Features</h1>
+                </div>
+                <div class="card-body-content">
+                    <p class="text-center mb-4">Focused on delivering immediate, measurable value.</p>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
+                        <div class="feature-card">
+                            <h2>1. AI Intro & Handoff</h2>
+                            <p>Immediate human agent option.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h2>2. Core Call Handling</h2>
+                            <p class="stat-number">60%</p>
+                            <p>AI field rate (peak hours).</p>
+                        </div>
+                        <div class="feature-card">
+                            <h2>3. RAG-Powered Q&A</h2>
+                            <div
+                                class="chart-container mx-auto h-[90px] max-h-[100px] !border-none !shadow-none !bg-transparent p-0 mt-1 mb-1 relative z-10">
+                                <canvas id="qaAccuracyChart"></canvas>
+                            </div>
+                            <p><span class="font-bold">75%</span> accuracy (Top 50 FAQs).</p>
+                        </div>
+                        <div class="feature-card">
+                            <h2>4. Intelligent Routing</h2>
+                            <p class="stat-number">90%</p>
+                            <p>Correct first-time routing.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h2>5. Bilingual Interaction</h2>
+                            <p>English & Vietnamese basics.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h2>6. Admin Portal</h2>
+                            <p>Doc upload, logs, feedback.</p>
+                        </div>
+                        <div class="feature-card lg:col-span-3 md:col-span-2">
+                            <h2>7. CSAT Goal</h2>
+                            <p class="stat-number">3.5/5</p>
+                            <div class="star-rating flex justify-center text-md">
+                                <span>⭐</span><span>⭐</span><span>⭐</span><span class="opacity-75">⭐</span><span
+                                    class="empty">☆</span>
+                            </div>
+                            <p>Initial AI interaction target.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <div class="slide-title-area">
+                    <h1>Our Technology Stack</h1>
+                </div>
+                <div class="card-body-content">
+                    <p class="text-center mb-4">Robust, scalable, and cutting-edge technologies.</p>
+                    <ul class="mt-2 grid md:grid-cols-2 gap-x-6 gap-y-2 text-left max-w-xl mx-auto">
+                        <li><strong>AI Core:</strong> OpenAI Agent SDK & SDK</li>
+                        <li><strong>Knowledge Base:</strong> Qdrant (Vector DB)</li>
+                        <li><strong>Backend:</strong> FastAPI (Python)</li>
+                        <li><strong>Hosting:</strong> AWS</li>
+                        <li><strong>Admin Frontend:</strong> Next.js & ShadCN UI</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <div class="slide-title-area">
+                    <h1>Security & Compliance</h1>
+                </div>
+                <div class="card-body-content">
+                    <p class="text-center mb-4">Integral to our design for Vietnam's regulatory landscape.</p>
+                    <ul class="mt-2 grid md:grid-cols-2 gap-x-6 gap-y-2 text-left">
+                        <li>Authentication & Authorization</li>
+                        <li>Data Protection (PDPD Compliant)</li>
+                        <li>AWS Infrastructure Security</li>
+                        <li>AI & LLM Security (Guardrails)</li>
+                        <li>Vietnamese Banking Regulation Adherence</li>
+                        <li>API & Backend Security</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <div class="slide-title-area">
+                    <h1>Competitive Landscape & Our Edge</h1>
+                </div>
+                <div class="card-body-content">
+                    <p class="text-center mb-4">Differentiating from FPT.AI, VNG, Viettel AI through:</p>
+                    <ul class="mt-2 grid md:grid-cols-2 gap-x-6 gap-y-2 text-left">
+                        <li>Superior Vietnamese NLP & CX</li>
+                        <li>Transparent MVP Goals</li>
+                        <li>Built for Compliance (PDPD, SBV)</li>
+                        <li>Seamless Handoff Focus</li>
+                        <li>Adaptable RAG Architecture</li>
+                        <li>Clear ROI Proposition</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <div class="slide-title-area">
+                    <h1>Why IntelliBank? Why Now?</h1>
+                </div>
+                <div class="card-body-content">
+                    <p class="text-center mb-4">Unlock benefits and capitalize on market momentum.</p>
+                    <ul class="mt-2 grid md:grid-cols-2 gap-x-6 gap-y-2 text-left">
+                        <li><span class="highlight">Reduce Costs:</span> Automate 60% peak calls.</li>
+                        <li><span class="highlight">Elevate CSAT:</span> Target 3.5/5.</li>
+                        <li><span class="highlight">Empower Agents:</span> Focus on high-value tasks.</li>
+                        <li><span class="highlight">Future-Proof:</span> Scalable AI solution.</li>
+                        <li><span class="highlight">Meet Regulations:</span> PDPD & compliance.</li>
+                        <li><span class="highlight">Capitalize on Trends:</span> Digital adoption.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <div class="slide-title-area">
+                    <h1>The Future: Beyond MVP</h1>
+                </div>
+                <div class="card-body-content">
+                    <p class="text-center mb-4">Our MVP is just the beginning. Future enhancements:</p>
+                    <ul class="mt-2 grid md:grid-cols-2 gap-x-6 gap-y-2 text-left">
+                        <li>Simple & Secure Transactions</li>
+                        <li>Proactive Assistance</li>
+                        <li>Appointment Booking</li>
+                        <li>Enhanced Self-Service (Fraud Alerts)</li>
+                        <li>Full Omnichannel Integration</li>
+                        <li>Advanced Admin Analytics</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <div class="slide-title-area">
+                    <h1>Join Us in Shaping the Future</h1>
+                </div>
+                <div class="card-body-content">
+                    <p class="text-lg text-center mb-3">Seeking <strong class="highlight">[e.g., strategic partners,
+                            pilot banks, seed investment]</strong>.</p>
+                    <p class="text-center">Let's discuss how IntelliBank can:</p>
+                    <ul class="mt-1 text-left md:w-3/4 mx-auto">
+                        <li>Transform customer service.</li>
+                        <li>Reduce operational overhead.</li>
+                        <li>Position you as an innovation leader.</li>
+                    </ul>
+                    <p class="mt-4 text-xl font-semibold text-center">Let's build the future of banking, together.</p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        const cardPrimary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+        const cardSecondary = getComputedStyle(document.documentElement).getPropertyValue('--secondary').trim();
+        const cardAccent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+        const cardText = getComputedStyle(document.documentElement).getPropertyValue('--text').trim();
+        const cardBg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+        const cardShadow = getComputedStyle(document.documentElement).getPropertyValue('--shadow-color').trim();
+
+
+        function wrapLabels(labels, maxWidth = 16) {
+            return labels.map(label => {
+                if (typeof label === 'string' && label.length > maxWidth) {
+                    const words = label.split(' ');
+                    const lines = [];
+                    let currentLine = '';
+                    words.forEach(word => {
+                        if ((currentLine + word).length > maxWidth && currentLine.length > 0) {
+                            lines.push(currentLine.trim());
+                            currentLine = word + ' ';
+                        } else {
+                            currentLine += word + ' ';
+                        }
+                    });
+                    lines.push(currentLine.trim());
+                    return lines;
+                }
+                return label;
+            });
+        }
+
+        const commonTooltipConfig = {
+            backgroundColor: cardBg,
+            titleColor: cardText,
+            bodyColor: cardText,
+            borderColor: cardText, // Using text color for tooltip border
+            borderWidth: 2,
+            cornerRadius: 5, // Match card radius a bit
+            displayColors: true,
+            padding: 8,
+            boxShadow: `0.2em 0.2em 0 ${cardShadow}`,
+            callbacks: {
+                title: function (tooltipItems) {
+                    const item = tooltipItems[0];
+                    let label = item.chart.data.labels[item.dataIndex];
+                    if (Array.isArray(label)) {
+                        return label.join(' ');
+                    }
+                    return label;
+                }
+            }
+        };
+        const commonChartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: cardText,
+                        font: { weight: '600', size: 10 },
+                        padding: 10,
+                        usePointStyle: true,
+                        pointStyle: 'rect', // Crisper point style
+                        boxWidth: 12,
+                        boxHeight: 8
+                    }
+                },
+                tooltip: commonTooltipConfig
+            },
+            animation: {
+                duration: 400,
+                easing: 'cubic-bezier(0.23, 1, 0.32, 1)'
+            }
+        };
+
+
+        const digitalAdoptionCtx = document.getElementById('digitalAdoptionChart')?.getContext('2d');
+        if (digitalAdoptionCtx) {
+            new Chart(digitalAdoptionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Digital', 'Non-Digital'],
+                    datasets: [{
+                        data: [97.5, 2.5],
+                        backgroundColor: [cardSecondary, '#e0e0e0'],
+                        borderColor: cardText,
+                        borderWidth: 2,
+                        hoverOffset: 5,
+                        hoverBorderColor: cardText,
+                        hoverBorderWidth: 2
+                    }]
+                },
+                options: {
+                    ...commonChartOptions,
+                    cutout: '60%'
+                }
+            });
+        }
+
+        const qaAccuracyCtx = document.getElementById('qaAccuracyChart')?.getContext('2d');
+        if (qaAccuracyCtx) {
+            new Chart(qaAccuracyCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: wrapLabels(['Accurate', 'Needs Help']),
+                    datasets: [{
+                        data: [75, 25],
+                        backgroundColor: [cardAccent, '#e0e0e0'],
+                        borderColor: cardText,
+                        borderWidth: 2,
+                        hoverOffset: 5,
+                        hoverBorderColor: cardText,
+                        hoverBorderWidth: 2
+                    }]
+                },
+                options: {
+                    ...commonChartOptions,
+                    cutout: '60%'
+                }
+            });
+        }
+    </script>
+
+</body>
+
+</html>

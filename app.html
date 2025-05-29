@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .music-player {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            width: 320px;
+            height: 500px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 12px 12px 0px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+
+        /* Album Art Section */
+        .album-section {
+            position: relative;
+            width: 100%;
+            height: 55%;
+            overflow: hidden;
+        }
+
+        .album-background {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(247, 225, 87, 1) 0%, rgba(233, 101, 148, 1) 100%);
+            position: relative;
+        }
+
+        .album-art {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: rotate 10s linear infinite;
+        }
+
+        .album-art::before {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #333;
+            z-index: 2;
+        }
+
+        .album-art::after {
+            content: '♪';
+            position: absolute;
+            font-size: 24px;
+            color: white;
+            z-index: 3;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        .decorative-elements {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .wave {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+        }
+
+        .wave:nth-child(1) {
+            width: 60px;
+            height: 60px;
+            top: 15%;
+            left: 10%;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .wave:nth-child(2) {
+            width: 40px;
+            height: 40px;
+            top: 70%;
+            right: 15%;
+            animation: float 4s ease-in-out infinite reverse;
+        }
+
+        .wave:nth-child(3) {
+            width: 25px;
+            height: 25px;
+            top: 25%;
+            right: 20%;
+            animation: float 2.5s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Control Section */
+        .control-section {
+            width: 100%;
+            height: 45%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 25px;
+            justify-content: space-between;
+        }
+
+        .track-info {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .track-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .track-artist {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .progress-section {
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #e0e0e0;
+            border-radius: 2px;
+            margin-bottom: 8px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .progress-fill {
+            width: 35%;
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .control-btn.play-btn {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .control-btn.secondary {
+            width: 40px;
+            height: 40px;
+            color: #666;
+            font-size: 18px;
+        }
+
+        .volume-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .volume-icon {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .volume-bar {
+            width: 80px;
+            height: 3px;
+            background-color: #e0e0e0;
+            border-radius: 2px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .volume-fill {
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .paused .album-art {
+            animation-play-state: paused;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="music-player" id="musicPlayer">
+        <!-- Album Art Section -->
+        <div class="album-section">
+            <div class="album-background">
+                <div class="decorative-elements">
+                    <div class="wave"></div>
+                    <div class="wave"></div>
+                    <div class="wave"></div>
+                </div>
+                <div class="album-art" id="albumArt"></div>
+            </div>
+        </div>
+
+        <!-- Control Section -->
+        <div class="control-section">
+            <div class="track-info">
+                <div class="track-title" id="trackTitle">Sunset Dreams</div>
+                <div class="track-artist" id="trackArtist">Ambient Waves</div>
+            </div>
+
+            <div class="progress-section">
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="time-display">
+                    <span id="currentTime">1:23</span>
+                    <span id="totalTime">3:47</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="control-btn secondary" id="prevBtn">⏮</button>
+                <button class="control-btn play-btn" id="playBtn">▶</button>
+                <button class="control-btn secondary" id="nextBtn">⏭</button>
+            </div>
+
+            <div class="volume-section">
+                <span class="volume-icon">🔊</span>
+                <div class="volume-bar" id="volumeBar">
+                    <div class="volume-fill" id="volumeFill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class MusicPlayer {
+            constructor() {
+                this.isPlaying = false;
+                this.currentProgress = 35;
+                this.currentVolume = 60;
+                this.tracks = [
+                    { title: "Sunset Dreams", artist: "Ambient Waves", duration: "3:47" },
+                    { title: "Ocean Breeze", artist: "Nature Sounds", duration: "4:12" },
+                    { title: "Mountain Echo", artist: "Peaceful Vibes", duration: "2:58" },
+                    { title: "City Lights", artist: "Urban Jazz", duration: "5:23" }
+                ];
+                this.currentTrack = 0;
+                this.initializeElements();
+                this.bindEvents();
+            }
+
+            initializeElements() {
+                this.player = document.getElementById('musicPlayer');
+                this.playBtn = document.getElementById('playBtn');
+                this.prevBtn = document.getElementById('prevBtn');
+                this.nextBtn = document.getElementById('nextBtn');
+                this.progressBar = document.getElementById('progressBar');
+                this.progressFill = document.getElementById('progressFill');
+                this.volumeBar = document.getElementById('volumeBar');
+                this.volumeFill = document.getElementById('volumeFill');
+                this.trackTitle = document.getElementById('trackTitle');
+                this.trackArtist = document.getElementById('trackArtist');
+                this.currentTime = document.getElementById('currentTime');
+                this.totalTime = document.getElementById('totalTime');
+            }
+
+            bindEvents() {
+                this.playBtn.addEventListener('click', () => this.togglePlay());
+                this.prevBtn.addEventListener('click', () => this.previousTrack());
+                this.nextBtn.addEventListener('click', () => this.nextTrack());
+
+                this.progressBar.addEventListener('click', (e) => this.setProgress(e));
+                this.volumeBar.addEventListener('click', (e) => this.setVolume(e));
+            }
+
+            togglePlay() {
+                this.isPlaying = !this.isPlaying;
+                this.playBtn.textContent = this.isPlaying ? '⏸' : '▶';
+
+                if (this.isPlaying) {
+                    this.player.classList.remove('paused');
+                } else {
+                    this.player.classList.add('paused');
+                }
+            }
+
+            previousTrack() {
+                this.currentTrack = (this.currentTrack - 1 + this.tracks.length) % this.tracks.length;
+                this.updateTrackInfo();
+                this.resetProgress();
+            }
+
+            nextTrack() {
+                this.currentTrack = (this.currentTrack + 1) % this.tracks.length;
+                this.updateTrackInfo();
+                this.resetProgress();
+            }
+
+            updateTrackInfo() {
+                const track = this.tracks[this.currentTrack];
+                this.trackTitle.textContent = track.title;
+                this.trackArtist.textContent = track.artist;
+                this.totalTime.textContent = track.duration;
+            }
+
+            resetProgress() {
+                this.currentProgress = 0;
+                this.progressFill.style.width = '0%';
+                this.currentTime.textContent = '0:00';
+            }
+
+            setProgress(e) {
+                const rect = this.progressBar.getBoundingClientRect();
+                const percent = (e.clientX - rect.left) / rect.width * 100;
+                this.currentProgress = Math.max(0, Math.min(100, percent));
+                this.progressFill.style.width = this.currentProgress + '%';
+
+                // Calculate time based on progress
+                const totalSeconds = this.parseDuration(this.tracks[this.currentTrack].duration);
+                const currentSeconds = Math.floor(totalSeconds * this.currentProgress / 100);
+                this.currentTime.textContent = this.formatTime(currentSeconds);
+            }
+
+            setVolume(e) {
+                const rect = this.volumeBar.getBoundingClientRect();
+                const percent = (e.clientX - rect.left) / rect.width * 100;
+                this.currentVolume = Math.max(0, Math.min(100, percent));
+                this.volumeFill.style.width = this.currentVolume + '%';
+            }
+
+            parseDuration(duration) {
+                const [minutes, seconds] = duration.split(':').map(Number);
+                return minutes * 60 + seconds;
+            }
+
+            formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+        }
+
+        // Initialize the music player when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new MusicPlayer();
+        });
+    </script>
+</body>
+
+</html>

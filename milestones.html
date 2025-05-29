@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Year Milestones Timeline</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: ui-sans-serif, system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .timeline-container {
+            width: 100%;
+            max-width: 1200px;
+            background: #ffffff;
+            border: 0.35em solid #050505;
+            border-radius: 0.6em;
+            box-shadow: 0.7em 0.7em 0 #000000;
+            padding: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .timeline-container::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(to right,
+                    rgba(0, 0, 0, 0.05) 1px,
+                    transparent 1px),
+                linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+            background-size: 0.5em 0.5em;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .timeline-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .timeline-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #050505;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-subtitle {
+            font-size: 1.1rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .timeline-track {
+            position: relative;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin: 2rem 0;
+            border: 3px solid #050505;
+            box-shadow:
+                inset 0 3px 6px rgba(0, 0, 0, 0.2),
+                0.4em 0.4em 0 #000000;
+            overflow: hidden;
+        }
+
+        .timeline-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #ff3e00, #ff6d43, #4d61ff);
+            border-radius: 7px;
+            width: 0%;
+            /* Start at 0, will be calculated by JavaScript */
+            transition: width 0.8s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .timeline-progress::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: repeating-linear-gradient(45deg,
+                    rgba(255, 255, 255, 0.2) 0px,
+                    rgba(255, 255, 255, 0.2) 10px,
+                    transparent 10px,
+                    transparent 20px);
+            animation: progressStripes 1.5s linear infinite;
+        }
+
+        .timeline-progress::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom,
+                    rgba(255, 255, 255, 0.3) 0%,
+                    rgba(255, 255, 255, 0.1) 50%,
+                    rgba(0, 0, 0, 0.1) 100%);
+            border-radius: 7px;
+        }
+
+        @keyframes progressStripes {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 40px 0;
+            }
+        }
+
+        .milestones {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 2rem;
+        }
+
+        .milestone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .milestone-marker {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 3px solid #050505;
+            background: #ffffff;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 3;
+            transition: all 0.3s ease;
+        }
+
+        .milestone.completed .milestone-marker {
+            background: #ff3e00;
+            box-shadow: 0 0 0 4px rgba(255, 62, 0, 0.2);
+        }
+
+        .milestone.current .milestone-marker {
+            background: #4d61ff;
+            box-shadow: 0 0 0 6px rgba(77, 97, 255, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        .milestone.future .milestone-marker {
+            background: #e0e0e0;
+            border-color: #ccc;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(77, 97, 255, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(77, 97, 255, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(77, 97, 255, 0);
+            }
+        }
+
+        .milestone-card {
+            background: #ffffff;
+            border: 0.25em solid #050505;
+            border-radius: 0.5em;
+            padding: 1.5rem;
+            min-width: 180px;
+            text-align: center;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            box-shadow: 0.4em 0.4em 0 #000000;
+        }
+
+        .milestone-card:hover {
+            transform: translate(-0.2em, -0.2em);
+            box-shadow: 0.6em 0.6em 0 #000000;
+        }
+
+        .milestone.start .milestone-card {
+            background: linear-gradient(135deg, #ff3e00, #ff6d43);
+            color: #ffffff;
+        }
+
+        .milestone.current .milestone-card {
+            background: linear-gradient(135deg, #4d61ff, #5e70ff);
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .milestone.current .milestone-card::before {
+            content: "";
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #4d61ff, #5e70ff, #4d61ff);
+            border-radius: 0.5em;
+            z-index: -1;
+            animation: borderGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes borderGlow {
+            from {
+                opacity: 0.5;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .milestone.end .milestone-card {
+            background: linear-gradient(135deg, #00e0b0, #00b894);
+            color: #ffffff;
+            position: relative;
+        }
+
+        .milestone.end .milestone-card::after {
+            content: "";
+            position: absolute;
+            top: -0.5rem;
+            right: -0.5rem;
+            font-size: 1.5rem;
+            background: #ffffff;
+            border-radius: 50%;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #050505;
+        }
+
+        .countdown-container {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: #ff3e00;
+            color: #ffffff;
+            padding: 0.8rem 1.2rem;
+            border: 2px solid #050505;
+            border-radius: 0.5rem;
+            font-weight: 800;
+            box-shadow: 0.3em 0.3em 0 #000000;
+            z-index: 4;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .countdown-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            opacity: 0.9;
+            margin-bottom: 0.2rem;
+        }
+
+        .countdown-number {
+            font-size: 1.5rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .countdown-days {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            opacity: 0.9;
+            margin-top: 0.1rem;
+        }
+
+        .freedom-badge {
+            display: inline-block;
+            background: linear-gradient(45deg, #00e0b0, #00b894);
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 0.3rem 0.6rem;
+            border: 2px solid #050505;
+            border-radius: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 0.5rem;
+            box-shadow: 0.2em 0.2em 0 #000000;
+            animation: freedomGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes freedomGlow {
+            from {
+                box-shadow: 0.2em 0.2em 0 #000000;
+                transform: scale(1);
+            }
+
+            to {
+                box-shadow: 0.3em 0.3em 0 #000000;
+                transform: scale(1.05);
+            }
+        }
+
+        .milestone-month {
+            font-size: 1.2rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+
+        .milestone-message {
+            font-size: 0.9rem;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .milestone.current .milestone-message {
+            position: relative;
+        }
+
+        .milestone.current .milestone-message::after {
+            content: "";
+            margin-left: 0.5rem;
+            animation: bounce 1.5s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-4px);
+            }
+        }
+
+        .milestone.end .milestone-message::after {
+            content: "";
+            margin-left: 0.5rem;
+        }
+
+        .connecting-line {
+            position: absolute;
+            top: 12px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #ddd;
+            z-index: 1;
+        }
+
+        .year-indicator {
+            position: absolute;
+            top: -2rem;
+            right: 2rem;
+            background: #ff3e00;
+            color: #ffffff;
+            padding: 0.5rem 1rem;
+            border: 2px solid #050505;
+            border-radius: 0.3rem;
+            font-weight: 800;
+            font-size: 1.1rem;
+            box-shadow: 0.2em 0.2em 0 #000000;
+            z-index: 4;
+        }
+
+        @media (max-width: 768px) {
+            .timeline-container {
+                padding: 2rem 1rem;
+            }
+
+            .milestones {
+                flex-direction: column;
+                gap: 2rem;
+            }
+
+            .milestone-card {
+                min-width: 100%;
+            }
+
+            .timeline-track {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="timeline-container">
+        <div class="year-indicator">2024</div>
+
+        <div class="timeline-header">
+            <h1 class="timeline-title">Year Progress</h1>
+            <p class="timeline-subtitle">Building towards freedom, one milestone at a time</p>
+        </div>
+
+        <div class="timeline-track">
+            <div class="timeline-progress"></div>
+        </div>
+
+        <div class="milestones">
+            <div class="connecting-line"></div>
+
+            <div class="milestone start completed">
+                <div class="milestone-marker"></div>
+                <div class="milestone-card">
+                    <div class="milestone-month">January</div>
+                    <div class="milestone-message">The journey begins!</div>
+                </div>
+            </div>
+
+            <div class="milestone current">
+                <div class="milestone-marker"></div>
+                <div class="milestone-card">
+                    <div class="milestone-month">Now</div>
+                    <div class="milestone-message">We're on the way, keep going!</div>
+                </div>
+            </div>
+
+            <div class="milestone end future">
+                <div class="milestone-marker"></div>
+                <div class="milestone-card">
+                    <div class="milestone-month">December</div>
+                    <div class="milestone-message">Free to build!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Calculate current progress based on actual date
+        function calculateYearProgress() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const startOfYear = new Date(currentYear, 0, 1); // January 1st
+            const endOfYear = new Date(currentYear + 1, 0, 1); // January 1st next year
+
+            const totalYearMs = endOfYear - startOfYear;
+            const elapsedMs = now - startOfYear;
+            const progressPercent = (elapsedMs / totalYearMs) * 100;
+
+            return {
+                percent: Math.round(progressPercent * 100) / 100, // Round to 2 decimal places
+                year: currentYear
+            };
+        }
+
+        function calculateDaysToFreedom() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const freedomDate = new Date(currentYear, 11, 31); // December 31st
+
+            // If we're past December 31st, calculate to next year's December 31st
+            if (now > freedomDate) {
+                freedomDate.setFullYear(currentYear + 1);
+            }
+
+            const timeDiff = freedomDate - now;
+            const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+            return {
+                days: daysRemaining,
+                isThisYear: freedomDate.getFullYear() === currentYear
+            };
+        }
+
+        function getCurrentMonthInfo() {
+            const now = new Date();
+            const monthNames = [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+            ];
+
+            const currentMonth = monthNames[now.getMonth()];
+            const dayOfMonth = now.getDate();
+
+            return {
+                month: currentMonth,
+                day: dayOfMonth,
+                displayText: `${currentMonth} ${dayOfMonth}`
+            };
+        }
+
+        // Add some interactivity
+        document.addEventListener('DOMContentLoaded', function () {
+            const progress = calculateYearProgress();
+            const monthInfo = getCurrentMonthInfo();
+            const freedomCountdown = calculateDaysToFreedom();
+
+            // Update year indicator
+            const yearIndicator = document.querySelector('.year-indicator');
+            yearIndicator.textContent = progress.year;
+
+            // Add countdown display
+            const timelineContainer = document.querySelector('.timeline-container');
+            const countdownDiv = document.createElement('div');
+            countdownDiv.className = 'countdown-container';
+            countdownDiv.innerHTML = `
+                <div class="countdown-label">Days to FREEDOM</div>
+                <div class="countdown-number">${freedomCountdown.days}</div>
+                <div class="countdown-days">days left</div>
+            `;
+            timelineContainer.appendChild(countdownDiv);
+
+            // Update current milestone text
+            const currentMilestone = document.querySelector('.milestone.current .milestone-month');
+            const currentMessage = document.querySelector('.milestone.current .milestone-message');
+            currentMilestone.textContent = monthInfo.displayText;
+
+            // Update progress-based message
+            let message = "We're on the way, keep going!";
+            if (progress.percent < 25) {
+                message = "Just getting started, lots of time ahead!";
+            } else if (progress.percent < 50) {
+                message = "Making good progress, keep it up!";
+            } else if (progress.percent < 75) {
+                message = "More than halfway there!";
+            } else if (progress.percent < 90) {
+                message = "Almost there, final push!";
+            } else {
+                message = "So close to the finish line!";
+            }
+            currentMessage.innerHTML = message;
+
+            // Update December milestone with countdown
+            const decemberMessage = document.querySelector('.milestone.end .milestone-message');
+            decemberMessage.innerHTML = `
+                Free to build!
+                <div class="freedom-badge">T-${freedomCountdown.days} days</div>
+            `;
+
+            const milestones = document.querySelectorAll('.milestone-card');
+
+            milestones.forEach(card => {
+                card.addEventListener('click', function () {
+                    // Add a temporary animation on click
+                    this.style.transform = 'translate(0.1em, 0.1em) scale(0.98)';
+                    this.style.boxShadow = '0.2em 0.2em 0 #000000';
+
+                    setTimeout(() => {
+                        this.style.transform = '';
+                        this.style.boxShadow = '';
+                    }, 150);
+                });
+            });
+
+            // Animate progress bar on load with actual progress
+            setTimeout(() => {
+                const progressBar = document.querySelector('.timeline-progress');
+                progressBar.style.width = `${progress.percent}%`;
+
+                // Add progress percentage display
+                const subtitle = document.querySelector('.timeline-subtitle');
+                subtitle.innerHTML = `Building towards freedom, one milestone at a time<br><small style="opacity: 0.7; font-size: 0.9em;">${progress.percent}% through ${progress.year}</small>`;
+            }, 500);
+        });
+    </script>
+</body>
+
+</html>
