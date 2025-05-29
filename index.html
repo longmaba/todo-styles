@@ -870,6 +870,143 @@
             z-index: 2;
         }
 
+        /* Minimal Card Theme */
+        body[data-theme="minimal-card"],
+        #app-container[data-theme="minimal-card"] {
+            --font-primary: ui-sans-serif, system-ui, sans-serif;
+            --font-display: ui-sans-serif, system-ui, sans-serif;
+
+            --minimal-card-bg: #fff480;
+            --minimal-card-text: #000000;
+            --minimal-card-text-secondary: #333333;
+            --minimal-card-accent: #f0d000;
+            --minimal-card-shadow: rgba(0, 0, 0, 0.1);
+
+            --bg-body: #f8f8f8;
+            --bg-body-image: none;
+            --text-body: var(--minimal-card-text);
+            --bg-container: var(--minimal-card-bg);
+            --border-container: none;
+            --shadow-container: 0 4px 20px var(--minimal-card-shadow);
+            --radius-container: 2.5em;
+            --backdrop-blur: none;
+
+            --text-header: var(--minimal-card-text);
+            --text-userid: var(--minimal-card-text-secondary);
+
+            --bg-input: rgba(255, 255, 255, 0.8);
+            --border-input: none;
+            --shadow-input: 0 2px 10px rgba(0, 0, 0, 0.05);
+            --radius-input: 1.5em;
+            --border-input-focus: none;
+            --shadow-input-focus: 0 4px 20px rgba(0, 0, 0, 0.15);
+
+            --bg-button-primary: var(--minimal-card-accent);
+            --text-button-primary: var(--minimal-card-text);
+            --border-button: none;
+            --shadow-button: 0 3px 15px rgba(0, 0, 0, 0.1);
+            --radius-button: 1.5em;
+            --bg-button-primary-hover: #e8c400;
+            --transform-button-hover: scale(0.97);
+            --shadow-button-hover: 0 2px 10px rgba(0, 0, 0, 0.08);
+            --transform-button-active: scale(0.93);
+            --shadow-button-active: 0 1px 5px rgba(0, 0, 0, 0.1);
+
+            --bg-button-danger: #ff6b6b;
+            --text-button-danger: #ffffff;
+            --border-button-danger: none;
+            --shadow-button-danger: 0 3px 15px rgba(255, 107, 107, 0.3);
+            --bg-button-danger-hover: #ff5252;
+
+            --bg-item: rgba(255, 255, 255, 0.6);
+            --border-item: none;
+            --shadow-item: 0 2px 15px rgba(0, 0, 0, 0.08);
+            --radius-item: 1.5em;
+            --bg-item-hover: rgba(255, 255, 255, 0.8);
+            --shadow-item-hover: 0 4px 20px rgba(0, 0, 0, 0.12);
+            --text-item: var(--minimal-card-text);
+            --text-item-completed: #666666;
+            --bg-item-completed: rgba(255, 255, 255, 0.4);
+            --border-item-completed: none;
+            --transform-item-hover: scale(0.98);
+
+            --bg-message-loading: #4ecdc4;
+            --text-message-loading: #ffffff;
+            --bg-message-error: #ff6b6b;
+            --text-message-error: #ffffff;
+            --border-message: none;
+            --radius-message: 1.5em;
+            --shadow-message: 0 3px 15px rgba(0, 0, 0, 0.1);
+
+            --bg-placeholder: rgba(255, 255, 255, 0.3);
+            --border-placeholder: none;
+            --text-placeholder: var(--minimal-card-text-secondary);
+            --radius-placeholder: 1.5em;
+            --shadow-placeholder: 0 2px 10px rgba(0, 0, 0, 0.05);
+
+            --bg-theme-btn: rgba(255, 255, 255, 0.7);
+            --text-theme-btn: var(--minimal-card-text);
+            --border-theme-btn: none;
+            --shadow-theme-btn: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --radius-theme-btn: 1em;
+            --bg-theme-btn-active: var(--minimal-card-accent);
+            --text-theme-btn-active: var(--minimal-card-text);
+            --border-theme-btn-active: none;
+            --shadow-theme-btn-active: 0 1px 5px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Minimal Card theme special effects */
+        body[data-theme="minimal-card"] #app-container {
+            position: relative;
+            transition: transform 0.4s ease;
+            cursor: pointer;
+        }
+
+        body[data-theme="minimal-card"] #app-container:hover {
+            transform: scale(0.97);
+        }
+
+        body[data-theme="minimal-card"] #app-container:active {
+            transform: scale(0.94);
+        }
+
+        body[data-theme="minimal-card"] .todo-item {
+            position: relative;
+            transition: all 0.4s ease;
+        }
+
+        body[data-theme="minimal-card"] .todo-item:hover {
+            transform: var(--transform-item-hover, scale(0.98));
+        }
+
+        body[data-theme="minimal-card"] .todo-item:active {
+            transform: scale(0.95);
+        }
+
+        body[data-theme="minimal-card"] .theme-btn:hover {
+            transform: scale(0.95);
+        }
+
+        body[data-theme="minimal-card"] .theme-btn:active {
+            transform: scale(0.9);
+        }
+
+        body[data-theme="minimal-card"] #add-todo-btn:hover {
+            transform: var(--transform-button-hover, scale(0.97));
+        }
+
+        body[data-theme="minimal-card"] #add-todo-btn:active {
+            transform: var(--transform-button-active, scale(0.93));
+        }
+
+        body[data-theme="minimal-card"] .delete-btn:hover {
+            transform: scale(0.95);
+        }
+
+        body[data-theme="minimal-card"] .delete-btn:active {
+            transform: scale(0.9);
+        }
+
         /* Apply variables to general elements */
         #app-container {
             font-family: var(--font-primary);
@@ -1193,6 +1330,7 @@
         <button class="theme-btn" data-theme="glassmorphism">Glass</button>
         <button class="theme-btn" data-theme="cyberpunk">Cyber</button>
         <button class="theme-btn" data-theme="card">Card</button>
+        <button class="theme-btn" data-theme="minimal-card">Minimal</button>
     </div>
 
     <div id="app-container" data-theme="neobrutalist">
